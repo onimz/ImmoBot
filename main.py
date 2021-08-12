@@ -57,16 +57,17 @@ if __name__ == '__main__':
     db.close_con()
 
     # Send out new offers via mail
-    s = smtplib.SMTP(host=host, port=port)
-    s.starttls()
-    s.login(sender, pw)
-    
     if new_offers > 0:
+        s = smtplib.SMTP(host=host, port=port)
+        s.starttls()
+        s.login(sender, pw)
+
         msg = MIMEMultipart("alternative")
         msg["Subject"] = f"{new_offers} neue WG-Gesucht Anzeige/n"
         msg["From"] = sender
         msg["To"] = receiver
         msg.attach(MIMEText(mail_string, 'html'))
         s.sendmail(sender, receiver, msg.as_string())
+
+        s.quit()
         print("Sent mail")
-    s.quit()
