@@ -54,10 +54,10 @@ class Notifier:
         for cnt, offer in enumerate(offers, start=1):
             if not db.check_if_in_db(offer):
                 db.add_offer(offer)
+                new_offers += 1
                 trim = 29  # Trim length for title
                 title = (offer.title[:trim - 2] + '..') if len(offer.title) > trim else offer.title
-                mail_string += f"<pre>{(str(cnt) + '.'):3} <a href=\"{offer.url}\">{title}</a>{''.ljust(trim - len(title))} ({offer.price})</pre>"
-                new_offers += 1
+                mail_string += f"<pre>{(str(new_offers) + '.'):3} <a href=\"{offer.url}\">{title}</a>{''.ljust(trim - len(title))} ({offer.price})</pre>"
         mail_string += "<br><br>Viel Erfolg beim Bewerben!"
         db.close_con()
 
@@ -76,3 +76,4 @@ class Notifier:
 
             s.quit()
             print("Sent mail")
+
