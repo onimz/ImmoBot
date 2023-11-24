@@ -1,35 +1,46 @@
+import logging
+from time import sleep
+import os
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import smtplib
 
-import configparser
-import os
-
+from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
 
-from Notifier.offer import Offer
-from Notifier.db import DB
+from src.offer import Offer
+from src.db import DB
+from src.utils import exit_with_error
 
 
 class Notifier:
     def __init__(self):
-        # Read in config values
-        config = configparser.ConfigParser(interpolation=None)
+        load_dotenv()
+        print(os.listdir("."))
+        print(os.getenv('wg_gesucht_filter_url'))
         try:
-            config.read(os.path.dirname(os.path.realpath(__file__)) + "/../config.ini")
-            self.sender = config.get('MAIL', 'mail_user')
-            self.receiver = config.get('MAIL', 'mail_to')
-            self.pw = config.get('MAIL', 'mail_pw')
-            self.host = config.get('MAIL', 'mail_smtp_host')
-            self.port = config.get('MAIL', 'mail_smtp_port')
-            self.filter_url = config.get('WG-GESUCHT', 'filter_url')
-            self.update_rate = config.getint('WG-GESUCHT', 'update_rate')
+            self.sender = os.getenv('mail_user')
+            self.receiver = os.getenv('mail_to')
+            self.pw = os.getenv('mail_pw')
+            self.host = os.getenv('mail_smtp_host')
+            self.port = os.getenv('mail_smtp_port')
+            self.filter_url = os.getenv('wg_gesucht_filter_url')
+            self.update_rate = int(os.getenv('update_rate'))
+        except ValueError as e:
+            logging.error(f"Couldn't parse update_rate to int: {e}")
+            exit_with_error("Couldn't parse update_rate from .env..")
         except Exception as e:
-            print(f"(Config-File Error) {e}")
-            raise SystemExit
+            logging.error(f"Unexpected error while reading in env values: {e}")
+            exit_with_error("Unexpected error when reading in .env values..")
 
-    def crawl_site(self):
+    def start_crawl_loop(self):
+        while True:
+            self.crawl_sites_routine()
+            sleep(self.update_rate)
+
+    def crawl_sites_routine(self):
+        logging.info("Start crawling")
         page = requests.get(self.filter_url)
         soup = BeautifulSoup(page.content, "html.parser")
         results = soup.find_all("div", class_="col-sm-8 card_body")
@@ -60,9 +71,11 @@ class Notifier:
                 mail_string += f"<pre>{(str(new_offers) + '.'):3} <a href=\"{offer.url}\">{title}</a>{''.ljust(trim - len(title))} ({offer.price})</pre>"
         mail_string += "<br><br>Viel Erfolg beim Bewerben!"
         db.close_con()
+        
+        print(mail_string)
 
         # Send out new offers via mail
-        if new_offers > 0:
+        """if new_offers > 0:
             s = smtplib.SMTP(host=self.host, port=self.port)
             s.starttls()
             s.login(self.sender, self.pw)
@@ -75,5 +88,5 @@ class Notifier:
             s.sendmail(self.sender, self.receiver, msg.as_string())
 
             s.quit()
-            print("Sent mail")
+            print("Sent mail")"""
 

@@ -1,8 +1,10 @@
-from Notifier.notifier import Notifier
-from time import sleep
+from src.utils import init_logger
+
+from src.notifier import Notifier
+
 
 if __name__ == '__main__':
+    init_logger()
+    
     notify = Notifier()
-    while True:
-        notify.crawl_site()
-        sleep(notify.update_rate)
+    notify.start_crawl_loop()

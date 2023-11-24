@@ -1,4 +1,4 @@
-from Notifier.db import DB
+from db import DB
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
 import sqlite3
 import os
+import logging
 
 
 class DB:
@@ -8,7 +9,7 @@ class DB:
         try:
             self.con = sqlite3.connect(directory + '/offers.db')
         except Exception as e:
-            print(e)
+            logging.error(f"Couldnt connect to db: {e}")
             raise SystemExit
         self.cur = self.con.cursor()
         self.cur.execute("CREATE TABLE IF NOT EXISTS Offers (title TEXT, user TEXT, price TEXT, url TEXT)")
