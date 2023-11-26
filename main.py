@@ -33,7 +33,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
-        url = update.effective_message.text.split(" ")[1]
+        url = context.args[0]
         status = notifier.add_filter(url, update.effective_user.id)
         if status == 0:
             text = strings.NOT_REGISTERED
@@ -56,9 +56,6 @@ async def list_adverts(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=f"{notifier.get_advert_list()}"
     )
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(chat_id=update.effective_chat.id, text=update.message.text)
-
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=strings.COMMAND_NOT_FOUND)
 
@@ -70,6 +67,12 @@ async def scrape(context: ContextTypes.DEFAULT_TYPE):
     for user_id, ads in advert_dict.items():
         await context.bot.send_message(chat_id=user_id, text=f"{len(ads)} neue Annoncen wurden gefunden:"\
                                                               f"\n\n{(nl).join([ad.url for ad in ads])}")
+        
+async def init_bot(context: ContextTypes.DEFAULT_TYPE):
+    await context.bot.set_my_description("")
+    await context.bot.set_my_short_description("Ich unterstüze Dich bei der Wohnungssuche.")
+    await context.bot.set_my_commands([("add_filter", "Hinzufügen von Suchfiltern"), ("register", "Zum Registrieren")])
+    
 
 if __name__ == '__main__':
     load_dotenv()
@@ -82,12 +85,10 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('register', register))
     application.add_handler(CommandHandler('add', add_filter))
     # application.add_handler(CommandHandler('list', list_adverts))
-    application.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), echo))
     application.add_handler(MessageHandler(filters.COMMAND, unknown)) # This handler must be added last
-    print(application)
-    print(application.job_queue)
     job_queue = application.job_queue
-    job_scrape = job_queue.run_repeating(scrape, interval=notifier.update_rate, first=1)
+    job_init_bot_settings = job_queue.run_once(init_bot, when=1)
+    job_scrape = job_queue.run_repeating(scrape, interval=notifier.update_rate, first=10)
 
     try:
         application.run_polling()
