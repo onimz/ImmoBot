@@ -1,92 +1,86 @@
 import logging
-from time import sleep
 import os
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
-import smtplib
 
-from dotenv import load_dotenv
-import requests
-from bs4 import BeautifulSoup
+import tldextract
 
-from src.offer import Offer
-from src.db import DB
+from src.db import init_db, get_connection, add_adverts, get_adverts, add_user, add_filter, get_filters, is_user_registered
 from src.utils import exit_with_error
+from src.utils import timed
+from src.models.advert import Advert
+from src.crawlers.wg_gesucht_crawler import WgGesuchtCrawler
+from src.crawlers.immo_scout_24_crawler import ImmoScout24Crawler
 
 
 class Notifier:
     def __init__(self):
-        load_dotenv()
-        print(os.listdir("."))
-        print(os.getenv('wg_gesucht_filter_url'))
+        init_db()
+        self.portale = {"wg-gesucht.de": WgGesuchtCrawler(), 
+                        "immobilienscout24.de": ImmoScout24Crawler()}
         try:
-            self.sender = os.getenv('mail_user')
-            self.receiver = os.getenv('mail_to')
-            self.pw = os.getenv('mail_pw')
-            self.host = os.getenv('mail_smtp_host')
-            self.port = os.getenv('mail_smtp_port')
-            self.filter_url = os.getenv('wg_gesucht_filter_url')
+            self.user_limit = int(os.getenv('user_limit'))
             self.update_rate = int(os.getenv('update_rate'))
         except ValueError as e:
-            logging.error(f"Couldn't parse update_rate to int: {e}")
-            exit_with_error("Couldn't parse update_rate from .env..")
+            exit_with_error(f"Couldn't parse .env value to int: {e}")
         except Exception as e:
-            logging.error(f"Unexpected error while reading in env values: {e}")
-            exit_with_error("Unexpected error when reading in .env values..")
+            exit_with_error(f"Unexpected error while reading in env values: {e}")
+    
+    def add_user(self, user_id, user_name) -> int:
+        """
+        0: limit reached,
+        1: user added,
+        2: user already added
+        """
+        with get_connection() as con:
+            return add_user(user_id, user_name, self.user_limit, con)
+    
+    def add_filter(self, filter_url, user_id) -> int:
+        """
+        0: not registered,
+        1: filter added,
+        2: faulty filter url
+        """
+        with get_connection() as con:
+            if not is_user_registered(user_id, con):
+                return 0
+            domain = tldextract.extract(filter_url).registered_domain
+            if domain not in self.portale.keys():
+                return 2
+            add_filter(domain, filter_url, user_id, con)
+            return 1
 
-    def start_crawl_loop(self):
-        while True:
-            self.crawl_sites_routine()
-            sleep(self.update_rate)
+    def get_advert_list(self):
+        with get_connection() as con:
+            adverts = get_adverts(con)
+            result = ""
+            for advert in adverts:
+                result += f"{str(advert.url)}\n"
+            return result
 
-    def crawl_sites_routine(self):
+    @timed
+    def crawl_websites_routine(self) -> list[Advert]:
         logging.info("Start crawling")
-        page = requests.get(self.filter_url)
-        soup = BeautifulSoup(page.content, "html.parser")
-        results = soup.find_all("div", class_="col-sm-8 card_body")
 
-        # Find all WG-Gesucht offers on page one
-        offers = []
-        for result in results:
-            user_name = result.find("span", class_="ml5")
-            is_ad = user_name is None or result.find("span", class_="label_verified ml5")
+        # Group user filters
+        with get_connection() as con:
+            filters = get_filters(con)
+        filter_dict = {}
+        for f in filters:
+            if f.user_id not in filter_dict:
+                filter_dict[f.user_id] = [f]
+            else:
+                filter_dict[f.user_id].append(f)
+    
+        # Scrape user filters
+        advert_dict = {}
+        for user_id, filters in filter_dict.items():
+            user_adverts = []
+            for f in filters:
+                user_adverts += self.portale.get(f.domain).crawl(f.filter_url, f.id, user_id)
+            with get_connection() as con:
+                new_user_adverts = add_adverts(user_adverts, con)
+                if len(new_user_adverts) > 0:
+                    advert_dict[user_id] = new_user_adverts
+                    logging.info(f"Found {len(new_user_adverts)} new adverts for user {user_id}")
+            
 
-            if not is_ad:
-                user_name = user_name.text.strip()
-                title = result.find("a").text.strip()
-                price = result.find("div", class_="col-xs-3").find("b").text.strip()
-                url = "https://www.wg-gesucht.de" + result.find('a')['href']
-                offers.append(Offer(title, user_name, price, url))
-
-        # Add new offers to db & build mail string
-        db = DB()
-        new_offers = 0
-        mail_string = f"Neue Anzeige/n Ihres <a href=\"{self.filter_url}\">Suchauftrags</a>:<br><br>"
-        for cnt, offer in enumerate(offers, start=1):
-            if not db.check_if_in_db(offer):
-                db.add_offer(offer)
-                new_offers += 1
-                trim = 29  # Trim length for title
-                title = (offer.title[:trim - 2] + '..') if len(offer.title) > trim else offer.title
-                mail_string += f"<pre>{(str(new_offers) + '.'):3} <a href=\"{offer.url}\">{title}</a>{''.ljust(trim - len(title))} ({offer.price})</pre>"
-        mail_string += "<br><br>Viel Erfolg beim Bewerben!"
-        db.close_con()
-        
-        print(mail_string)
-
-        # Send out new offers via mail
-        """if new_offers > 0:
-            s = smtplib.SMTP(host=self.host, port=self.port)
-            s.starttls()
-            s.login(self.sender, self.pw)
-
-            msg = MIMEMultipart("alternative")
-            msg["Subject"] = f"{new_offers} neue WG-Gesucht Anzeige/n"
-            msg["From"] = self.sender
-            msg["To"] = self.receiver
-            msg.attach(MIMEText(mail_string, 'html'))
-            s.sendmail(self.sender, self.receiver, msg.as_string())
-
-            s.quit()
-            print("Sent mail")"""
-
+        return advert_dict
