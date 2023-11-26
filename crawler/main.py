@@ -2,25 +2,24 @@ import logging
 from time import sleep
 import os
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 project_root = os.path.dirname(os.path.abspath(__file__))+"/../"
 sys.path.append(project_root)
 
 from common.utils import timed
 from common.utils import init_logger
 from common.models.advert import Advert
-from common.db import get_connection, get_filters, add_adverts
+from common.db import get_connection, get_filters, add_adverts, init_db
 from crawlers.wg_gesucht_crawler import WgGesuchtCrawler
 from crawlers.immo_scout_24_crawler import ImmoScout24Crawler
 
 @timed
 def crawl_websites_routine() -> list[Advert]:
-    init_logger(level=logging.INFO)
-
     portale = {"wg-gesucht.de": WgGesuchtCrawler(), 
                "immobilienscout24.de": ImmoScout24Crawler()}
 
     logging.info("Start crawling")
-
     # Group user filters
     with get_connection() as con:
         filters = get_filters(con)
@@ -40,13 +39,13 @@ def crawl_websites_routine() -> list[Advert]:
         with get_connection() as con:
             new_user_adverts = add_adverts(user_adverts, con)
             if len(new_user_adverts) > 0:
-                advert_dict[user_id] = new_user_adverts
-                logging.info(f"Found {len(new_user_adverts)} new adverts for user {user_id}")
+                logging.info(f"Found {len(new_user_adverts)} new adverts for user {user_id}")    
         
-
     return advert_dict
 
 if __name__ == '__main__':
+    init_logger(path=f"{os.path.dirname(os.path.abspath(__file__))}/logs", level=logging.INFO)
+    init_db()
     update_rate = int(os.getenv('UPDATE_RATE'))
     while True:
         crawl_websites_routine()

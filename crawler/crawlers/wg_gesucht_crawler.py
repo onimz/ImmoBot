@@ -1,5 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
+from datetime import datetime
 
 from crawlers.crawler import Crawler
 from common.models.advert import Advert
@@ -21,6 +22,6 @@ class WgGesuchtCrawler(Crawler):
                 title = result.find("a").text.strip()
                 price = result.find("div", class_="col-xs-3").find("b").text.strip()
                 url = "https://www.wg-gesucht.de" + result.find('a')['href']
-                adverts.append(Advert(title, author, price, url, filter_id=filter_id, user_id=user_id))
+                adverts.append(Advert(1, title, author, price, url, filter_id=filter_id, created_at=datetime.now(), user_id=user_id))
         return adverts
    

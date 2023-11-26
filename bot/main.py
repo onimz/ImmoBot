@@ -2,10 +2,13 @@
 import os
 import logging
 import sys
+from dotenv import load_dotenv
+load_dotenv()
 project_root = os.path.dirname(os.path.abspath(__file__))+"/../"
 sys.path.append(project_root)
 
 from telegram import Update
+from telegram.constants import ParseMode
 from telegram.ext import filters, Application, MessageHandler, CommandHandler, ContextTypes
 from common.utils import init_logger
 from common.utils import exit_with_error
@@ -52,24 +55,14 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=text
     )
 
-"""async def list_adverts(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await context.bot.send_message(
-        chat_id=update.effective_chat.id,
-        text=f"{notifier.get_advert_list()}"
-    )"""
-
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=strings.COMMAND_NOT_FOUND)
 
 async def polling_db(context: ContextTypes.DEFAULT_TYPE):
-    # TODO
-    """advert_dict = notifier.crawl_websites_routine()
-    if len(advert_dict) <= 0:
-        return
-    nl = '\n\n'
-    for user_id, ads in advert_dict.items():
-        await context.bot.send_message(chat_id=user_id, text=f"{len(ads)} neue Annoncen wurden gefunden:"\
-                                                              f"\n\n{(nl).join([ad.url for ad in ads])}")"""
+    new_adverts = notifier.check_for_new_adverts()
+    for advert in new_adverts:
+        text = f"[{advert.title} | {advert.price}]({advert.url})"
+        await context.bot.send_message(chat_id=advert.user_id, text=text, parse_mode=ParseMode.MARKDOWN)
         
 async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.set_my_description("")
@@ -78,7 +71,7 @@ async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     
 
 if __name__ == '__main__':
-    init_logger(level=logging.INFO)
+    init_logger(path=f"{os.path.dirname(os.path.abspath(__file__))}/logs", level=logging.INFO)
 
     notifier = Notifier()
 
@@ -86,7 +79,6 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('register', register))
     application.add_handler(CommandHandler('add', add_filter))
-    # application.add_handler(CommandHandler('list', list_adverts))
     application.add_handler(MessageHandler(filters.COMMAND, unknown)) # This handler must be added last
     job_queue = application.job_queue
     job_init_bot_settings = job_queue.run_once(init_bot, when=1)

@@ -9,6 +9,14 @@ def init_db():
     try:
         with get_connection() as con:
             cur = con.cursor()
+
+            cur.execute('''
+                CREATE TABLE IF NOT EXISTS Metadata_Bot (
+                    id INTEGER PRIMARY KEY,
+                    latest_poll_timestamp TIMESTAMP
+                )
+            ''')
+
             cur.execute('''
                 CREATE TABLE IF NOT EXISTS User (
                     id INTEGER PRIMARY KEY,
@@ -35,6 +43,7 @@ def init_db():
                     url TEXT,
                     size_m2 TEXT,
                     website TEXT,
+                    created_at TIMESTAMP,
                     annonce_date DATE,
                     filter_id INTEGER NOT NULL,
                     user_id INTEGER NOT NULL,
@@ -51,8 +60,19 @@ def init_db():
         raise SystemExit
 
 def get_connection():
-    #print(os.path.join(os.path.dirname(os.path.realpath(__file__)), '/../data/adverts.db'))
-    return sqlite3.connect(os.path.dirname(os.path.realpath(__file__))+ '/../data/adverts.db')
+    return sqlite3.connect(os.path.dirname(os.path.realpath(__file__)) + '/../data/adverts.db')
+
+def get_latest_poll_timestamp(con):
+    cur = con.cursor()
+    cur.execute('SELECT latest_poll_timestamp FROM Metadata_Bot')
+    result = cur.fetchone()
+    if result:
+        return result[0]
+    return None
+
+def update_latest_poll_timestamp(con, new_timestamp):
+    con.cursor().execute('INSERT OR REPLACE INTO Metadata_Bot (id, latest_poll_timestamp) VALUES (?, ?)', (1, new_timestamp,))
+    con.commit()
 
 def get_user_count(con):
     cur = con.cursor()
@@ -62,10 +82,8 @@ def get_user_count(con):
 
 def add_user(user_id, user_name, user_limit, con) -> int:
     cur = con.cursor()
-
     if is_user_registered(user_id, con):
         return 2
-
     user_count = get_user_count(con)
     if user_count >= user_limit:
         print(f"Cannot add user. maximum user limit reached.")
@@ -88,14 +106,17 @@ def add_adverts(adverts, con) -> list[Advert]:
     for advert in adverts:
         if is_advert_in_db(advert, con):
             continue
-        query = f"INSERT INTO Advert (title, author, price, url, size_m2, website, annonce_date, filter_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        cur.execute(query, (advert.title, advert.author, advert.price, advert.url, "N/A", "N/A", "N/A", advert.filter_id, advert.user_id,))
+        query = f"INSERT INTO Advert (title, author, price, url, size_m2, website, created_at, annonce_date, filter_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        cur.execute(query, (advert.title, advert.author, advert.price, advert.url, "N/A", "N/A", advert.created_at,"N/A", advert.filter_id, advert.user_id,))
         con.commit()
         added_adverts.append(advert)
     return added_adverts
 
-def get_adverts(con) -> list[Advert]:
-    query = "SELECT * FROM Advert ORDER BY title ASC"
+def get_adverts(con, timestamp=None) -> list[Advert]:
+    if timestamp:
+        query = f"SELECT * FROM Advert WHERE created_at > '{timestamp}'"
+    else:
+        query = "SELECT * FROM Advert"
     cur = con.cursor()
     cur.execute(query)
     return [Advert(*advert) for advert in cur.fetchall()]

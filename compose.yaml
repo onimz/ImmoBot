@@ -7,7 +7,7 @@ services:
     env_file:
       - ./bot/.env
     volumes:
-      - ./data:/app/data
+      - sqlite_volume:/app/data
 
   crawler:
     build: 
@@ -17,5 +17,7 @@ services:
     env_file:
       - ./crawler/.env
     volumes:
-      - ./data:/app/data
+      - sqlite_volume:/app/data
 
+volumes:
+  sqlite_volume:

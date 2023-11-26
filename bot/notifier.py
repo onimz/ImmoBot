@@ -1,8 +1,9 @@
 import os
+from datetime import datetime
 
 import tldextract
 
-from common.db import init_db, get_connection, get_adverts, add_user, add_filter, is_user_registered
+from common.db import init_db, get_connection, get_adverts, add_user, add_filter, is_user_registered, get_latest_poll_timestamp, update_latest_poll_timestamp
 from common.utils import exit_with_error
 
 
@@ -49,4 +50,11 @@ class Notifier:
                 result += f"{str(advert.url)}\n"
             return result
 
-    
+    def check_for_new_adverts(self):
+        with get_connection() as con:
+            new_timestamp = datetime.now()
+            latest_poll = get_latest_poll_timestamp(con)
+            new_adverts = get_adverts(con, latest_poll)
+            update_latest_poll_timestamp(con, new_timestamp)
+            return new_adverts
+            
