@@ -16,15 +16,13 @@ WORKDIR /app
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
 # Leverage a bind mount to requirements.txt to avoid having to copy them into
 # into this layer.
-RUN --mount=type=cache,target=/root/.cache/pip \
-    --mount=type=bind,source=requirements.txt,target=requirements.txt \
-    python -m pip install -r requirements.txt
+
 
 # Copy the source code into the container.
-COPY . .
+COPY ./crawler .
+COPY common common
 
-# Expose the port that the application listens on.
-EXPOSE 8000
+RUN python -m pip install -r requirements.txt
 
 # Run the application.
 CMD python main.py

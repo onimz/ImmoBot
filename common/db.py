@@ -2,8 +2,8 @@ import sqlite3
 import os
 import logging
 
-from src.models.advert import Advert
-from src.models.filter import Filter
+from common.models.advert import Advert
+from common.models.filter import Filter
 
 def init_db():
     try:
@@ -51,7 +51,8 @@ def init_db():
         raise SystemExit
 
 def get_connection():
-    return sqlite3.connect(os.path.join(os.path.dirname(os.path.realpath(__file__)), 'adverts.db'))
+    #print(os.path.join(os.path.dirname(os.path.realpath(__file__)), '/../data/adverts.db'))
+    return sqlite3.connect(os.path.dirname(os.path.realpath(__file__))+ '/../data/adverts.db')
 
 def get_user_count(con):
     cur = con.cursor()

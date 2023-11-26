@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 
-from src.crawlers.crawler import Crawler
-from src.models.advert import Advert
+from crawlers.crawler import Crawler
+from common.models.advert import Advert
 
 class WgGesuchtCrawler(Crawler):
 

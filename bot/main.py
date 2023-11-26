@@ -1,14 +1,16 @@
+
 import os
-from dotenv import load_dotenv
 import logging
+import sys
+project_root = os.path.dirname(os.path.abspath(__file__))+"/../"
+sys.path.append(project_root)
 
 from telegram import Update
 from telegram.ext import filters, Application, MessageHandler, CommandHandler, ContextTypes
-
-from src.utils import init_logger
-from src.utils import exit_with_error
-from src.notifier import Notifier
-import src.strings as strings
+from common.utils import init_logger
+from common.utils import exit_with_error
+from notifier import Notifier
+import strings as strings
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
@@ -22,7 +24,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if status == 0:
         text = strings.REGISTER_FAILURE
     elif status == 1:
-        text = strings.REGISTER_SUCCESS.format(user.full_name, ', '.join(notifier.portale.keys()))
+        text = strings.REGISTER_SUCCESS.format(user.full_name, ', '.join(notifier.portale))
     elif status == 2:
         text = strings.REGISTER_EXISTS
     
@@ -50,23 +52,24 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=text
     )
 
-async def list_adverts(update: Update, context: ContextTypes.DEFAULT_TYPE):
+"""async def list_adverts(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=f"{notifier.get_advert_list()}"
-    )
+    )"""
 
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=strings.COMMAND_NOT_FOUND)
 
-async def scrape(context: ContextTypes.DEFAULT_TYPE):
-    advert_dict = notifier.crawl_websites_routine()
+async def polling_db(context: ContextTypes.DEFAULT_TYPE):
+    # TODO
+    """advert_dict = notifier.crawl_websites_routine()
     if len(advert_dict) <= 0:
         return
     nl = '\n\n'
     for user_id, ads in advert_dict.items():
         await context.bot.send_message(chat_id=user_id, text=f"{len(ads)} neue Annoncen wurden gefunden:"\
-                                                              f"\n\n{(nl).join([ad.url for ad in ads])}")
+                                                              f"\n\n{(nl).join([ad.url for ad in ads])}")"""
         
 async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.set_my_description("")
@@ -75,7 +78,6 @@ async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     
 
 if __name__ == '__main__':
-    load_dotenv()
     init_logger(level=logging.INFO)
 
     notifier = Notifier()
@@ -88,7 +90,7 @@ if __name__ == '__main__':
     application.add_handler(MessageHandler(filters.COMMAND, unknown)) # This handler must be added last
     job_queue = application.job_queue
     job_init_bot_settings = job_queue.run_once(init_bot, when=1)
-    job_scrape = job_queue.run_repeating(scrape, interval=notifier.update_rate, first=10)
+    job_scrape = job_queue.run_repeating(polling_db, interval=int(os.getenv('BOT_POLLING_RATE')), first=10)
 
     try:
         application.run_polling()
