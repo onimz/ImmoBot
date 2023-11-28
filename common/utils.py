@@ -3,8 +3,8 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import time
 
-def init_logger(level=logging.DEBUG):
-    log_directory = f"{os.path.dirname(os.path.abspath(__file__))}/../logs"
+def init_logger(path, level=logging.DEBUG):
+    log_directory = path
     log_file_path = os.path.join(log_directory, "app.log")
     os.makedirs(log_directory, exist_ok=True)
     logger = logging.getLogger()

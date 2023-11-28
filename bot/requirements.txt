@@ -10,7 +10,6 @@ h11==0.14.0
 httpcore==1.0.2
 httpx==0.25.2
 idna==2.8
-python-dotenv==1.0.0
 python-telegram-bot==20.6
 pytz==2023.3.post1
 requests==2.22.0
@@ -22,3 +21,4 @@ tldextract==5.1.1
 tornado==6.1
 tzlocal==5.2
 urllib3==1.25.11
+python-dotenv==1.0.0

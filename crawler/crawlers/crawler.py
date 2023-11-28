@@ -1,4 +1,4 @@
-from src.models.advert import Advert
+from common.models.advert import Advert
 
 class Crawler:
     
