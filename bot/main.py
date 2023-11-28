@@ -66,7 +66,7 @@ async def polling_db(context: ContextTypes.DEFAULT_TYPE):
         
 async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.set_my_description("")
-    await context.bot.set_my_short_description("Ich unterstüze Dich bei der Wohnungssuche.")
+    await context.bot.set_my_short_description("Ich unterstütze Dich bei der Wohnungssuche.")
     await context.bot.set_my_commands([("add_filter", "Hinzufügen von Suchfiltern"), ("register", "Zum Registrieren")])
     
 

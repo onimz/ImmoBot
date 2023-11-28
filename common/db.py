@@ -51,7 +51,6 @@ def init_db():
                     FOREIGN KEY (user_id) REFERENCES User(id)
                 )
             ''')
-            con.commit()
     except sqlite3.OperationalError as e:
         logging.error(f"Couldn't create tables: {e}")
         raise SystemExit
@@ -62,7 +61,7 @@ def init_db():
 def get_connection():
     return sqlite3.connect(os.path.dirname(os.path.realpath(__file__)) + '/../data/adverts.db')
 
-def get_latest_poll_timestamp(con):
+def get_latest_poll_timestamp(con: sqlite3.Connection):
     cur = con.cursor()
     cur.execute('SELECT latest_poll_timestamp FROM Metadata_Bot')
     result = cur.fetchone()
@@ -70,17 +69,16 @@ def get_latest_poll_timestamp(con):
         return result[0]
     return None
 
-def update_latest_poll_timestamp(con, new_timestamp):
+def update_latest_poll_timestamp(new_timestamp, con: sqlite3.Connection):
     con.cursor().execute('INSERT OR REPLACE INTO Metadata_Bot (id, latest_poll_timestamp) VALUES (?, ?)', (1, new_timestamp,))
-    con.commit()
 
-def get_user_count(con):
+def get_user_count(con: sqlite3.Connection):
     cur = con.cursor()
     cur.execute('SELECT COUNT(*) FROM User')
     count = cur.fetchone()[0]
     return count
 
-def add_user(user_id, user_name, user_limit, con) -> int:
+def add_user(user_id, user_name, user_limit, con: sqlite3.Connection) -> int:
     cur = con.cursor()
     if is_user_registered(user_id, con):
         return 2
@@ -90,17 +88,15 @@ def add_user(user_id, user_name, user_limit, con) -> int:
         return 0
     
     cur.execute("INSERT INTO User (id, user_name) VALUES (?, ?)", (user_id, user_name,))
-    con.commit()
     print(f"User {user_name} ({user_id}) registered successfully.")
     logging.info(f"User {user_name} ({user_id}) registered successfully.")
     return 1
 
-def add_filter(domain, filter_url, user_id, con):
+def add_filter(domain, filter_url, user_id, con: sqlite3.Connection):
     cur = con.cursor()
     cur.execute("INSERT INTO Filter (domain, filter_url, user_id) VALUES (?, ?, ?)", (domain, filter_url, user_id,))
-    con.commit()
 
-def add_adverts(adverts, con) -> list[Advert]:
+def add_adverts(adverts: list[Advert], con: sqlite3.Connection) -> list[Advert]:
     cur = con.cursor()
     added_adverts = []
     for advert in adverts:
@@ -108,11 +104,10 @@ def add_adverts(adverts, con) -> list[Advert]:
             continue
         query = f"INSERT INTO Advert (title, author, price, url, size_m2, website, created_at, annonce_date, filter_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         cur.execute(query, (advert.title, advert.author, advert.price, advert.url, "N/A", "N/A", advert.created_at,"N/A", advert.filter_id, advert.user_id,))
-        con.commit()
         added_adverts.append(advert)
     return added_adverts
 
-def get_adverts(con, timestamp=None) -> list[Advert]:
+def get_adverts(con: sqlite3.Connection, timestamp=None) -> list[Advert]:
     if timestamp:
         query = f"SELECT * FROM Advert WHERE created_at > '{timestamp}'"
     else:
@@ -121,24 +116,24 @@ def get_adverts(con, timestamp=None) -> list[Advert]:
     cur.execute(query)
     return [Advert(*advert) for advert in cur.fetchall()]
 
-def get_filters(con) -> list[Filter]:
+def get_filters(con: sqlite3.Connection) -> list[Filter]:
     query = "SELECT * FROM Filter"
     cur = con.cursor()
     cur.execute(query)
     return [Filter(*filter) for filter in cur.fetchall()]
 
-def is_advert_in_db(advert, con) -> bool:
-    query = "SELECT * FROM Advert WHERE url = ?"
+def is_advert_in_db(advert: Advert, con: sqlite3.Connection) -> bool:
+    query = "SELECT * FROM Advert WHERE user_id = ? AND url = ?"
     cur = con.cursor()
-    cur.execute(query, (advert.url,))
-    if len(cur.fetchall()) > 0:
+    cur.execute(query, (advert.url, advert.user_id,))
+    if cur.fetchone():
         return True
     return False
 
-def is_user_registered(user_id, con) -> bool:
+def is_user_registered(user_id, con: sqlite3.Connection) -> bool:
     query = "SELECT * FROM User WHERE id = ?"
     cur = con.cursor()
     cur.execute(query, (user_id,))
-    if len(cur.fetchall()) > 0:
+    if cur.fetchone():
         return True
     return False
