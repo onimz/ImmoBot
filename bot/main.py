@@ -6,9 +6,6 @@ import pytz
 from queue import Queue
 
 from dotenv import load_dotenv
-load_dotenv()
-project_root = os.path.dirname(os.path.abspath(__file__))+"/../"
-sys.path.append(project_root)
 from telegram import Update
 from telegram.constants import ParseMode
 from telegram.ext import filters, Application, MessageHandler, CommandHandler, ContextTypes, Defaults
@@ -18,6 +15,10 @@ from common.utils import exit_with_error
 from notifier import Notifier
 import strings as strings
 
+load_dotenv()
+project_root = os.path.dirname(os.path.abspath(__file__))+"/../"
+sys.path.append(project_root)
+
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
@@ -25,20 +26,23 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text=strings.START
     )
 
+
 async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
     status = notifier.add_user(user.id, user.full_name)
     if status == 0:
         text = strings.REGISTER_FAILURE
     elif status == 1:
-        text = strings.REGISTER_SUCCESS.format(user.full_name, ', '.join(notifier.portale))
+        text = strings.REGISTER_SUCCESS.format(
+            user.full_name, ', '.join(notifier.portale))
     elif status == 2:
         text = strings.REGISTER_EXISTS
-    
+
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=text
     )
+
 
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -53,11 +57,12 @@ async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     except IndexError:
         # FIXME NUR WENN SCHON REGISTRIERT IST ANZEIGEN
         text = strings.ADD_URL_MISSING
-    
+
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text=text
     )
+
 
 async def list_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
@@ -65,19 +70,23 @@ async def list_filters(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text="Not implemented."
     )
 
+
 async def delete_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Not implemented."
     )
 
+
 async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.send_message(chat_id=update.effective_chat.id, text=strings.COMMAND_NOT_FOUND)
+
 
 async def _send_out_adverts(adverts, context):
     for advert in adverts:
         text = f"[{advert.title} | {advert.price}]({advert.url})"
         await context.bot.send_message(chat_id=advert.user_id, text=text)
+
 
 async def polling_db(context: ContextTypes.DEFAULT_TYPE):
     """ Retrieve new ads from the database 
@@ -104,10 +113,10 @@ async def polling_db(context: ContextTypes.DEFAULT_TYPE):
             outgoing += new_adverts[:diff]
             for element in new_adverts[diff:]:
                 queue_outgoing.put(element)
-    
+
     await _send_out_adverts(outgoing, context)
 
-        
+
 async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.set_my_description("")
     await context.bot.set_my_short_description(strings.BOT_SHORT_DESCRIPTION)
@@ -115,7 +124,7 @@ async def init_bot(context: ContextTypes.DEFAULT_TYPE):
                                        ("list", "Anzeigen von Suchfiltern"),
                                        ("delete", "Löschen von Suchfiltern"),
                                        ("register", "Zum Registrieren")])
-    
+
 
 if __name__ == '__main__':
     init_logger(path=f"{os.path.dirname(os.path.abspath(__file__))}/logs", level=logging.INFO)
@@ -130,7 +139,8 @@ if __name__ == '__main__':
     queue_outgoing = Queue()
 
     notifier = Notifier()
-    defaults = Defaults(parse_mode=ParseMode.MARKDOWN, tzinfo=pytz.timezone('Europe/Berlin'))
+    defaults = Defaults(parse_mode=ParseMode.MARKDOWN,
+                        tzinfo=pytz.timezone('Europe/Berlin'))
 
     application = Application   \
         .builder()  \
@@ -142,7 +152,8 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('add', add_filter))
     application.add_handler(CommandHandler('list', list_filters))
     application.add_handler(CommandHandler('delete', delete_filter))
-    application.add_handler(MessageHandler(filters.COMMAND, unknown)) # This handler must be added last
+    # This handler must be added last
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))
     job_queue = application.job_queue
     job_init_bot_settings = job_queue.run_once(init_bot, when=1)
     job_scrape = job_queue.run_repeating(polling_db, interval=int(os.getenv('BOT_POLLING_RATE')), first=10)

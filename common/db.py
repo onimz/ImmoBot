@@ -5,6 +5,7 @@ import logging
 from common.models.advert import Advert
 from common.models.filter import Filter
 
+
 def init_db():
     try:
         with get_connection() as con:
@@ -58,8 +59,10 @@ def init_db():
         logging.error(f"Couldn't connect to db: {e}")
         raise SystemExit
 
+
 def get_connection():
     return sqlite3.connect(os.path.dirname(os.path.realpath(__file__)) + '/../data/adverts.db')
+
 
 def get_latest_poll_timestamp(con: sqlite3.Connection):
     cur = con.cursor()
@@ -69,14 +72,17 @@ def get_latest_poll_timestamp(con: sqlite3.Connection):
         return result[0]
     return None
 
+
 def update_latest_poll_timestamp(new_timestamp, con: sqlite3.Connection):
     con.cursor().execute('INSERT OR REPLACE INTO Metadata_Bot (id, latest_poll_timestamp) VALUES (?, ?)', (1, new_timestamp,))
+
 
 def get_user_count(con: sqlite3.Connection):
     cur = con.cursor()
     cur.execute('SELECT COUNT(*) FROM User')
     count = cur.fetchone()[0]
     return count
+
 
 def add_user(user_id, user_name, user_limit, con: sqlite3.Connection) -> int:
     cur = con.cursor()
@@ -86,15 +92,17 @@ def add_user(user_id, user_name, user_limit, con: sqlite3.Connection) -> int:
     if user_count >= user_limit:
         print(f"Cannot add user. maximum user limit reached.")
         return 0
-    
+
     cur.execute("INSERT INTO User (id, user_name) VALUES (?, ?)", (user_id, user_name,))
     print(f"User {user_name} ({user_id}) registered successfully.")
     logging.info(f"User {user_name} ({user_id}) registered successfully.")
     return 1
 
+
 def add_filter(domain, filter_url, user_id, con: sqlite3.Connection):
     cur = con.cursor()
     cur.execute("INSERT INTO Filter (domain, filter_url, user_id) VALUES (?, ?, ?)", (domain, filter_url, user_id,))
+
 
 def add_adverts(adverts: list[Advert], con: sqlite3.Connection) -> list[Advert]:
     cur = con.cursor()
@@ -103,9 +111,11 @@ def add_adverts(adverts: list[Advert], con: sqlite3.Connection) -> list[Advert]:
         if is_advert_in_db(advert, con):
             continue
         query = f"INSERT INTO Advert (title, author, price, url, size_m2, website, created_at, annonce_date, filter_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        cur.execute(query, (advert.title, advert.author, advert.price, advert.url, "N/A", "N/A", advert.created_at,"N/A", advert.filter_id, advert.user_id,))
+        cur.execute(query, (advert.title, advert.author, advert.price, advert.url, "N/A",
+                    "N/A", advert.created_at, "N/A", advert.filter_id, advert.user_id,))
         added_adverts.append(advert)
     return added_adverts
+
 
 def get_adverts(con: sqlite3.Connection, timestamp=None) -> list[Advert]:
     if timestamp:
@@ -116,11 +126,13 @@ def get_adverts(con: sqlite3.Connection, timestamp=None) -> list[Advert]:
     cur.execute(query)
     return [Advert(*advert) for advert in cur.fetchall()]
 
+
 def get_filters(con: sqlite3.Connection) -> list[Filter]:
     query = "SELECT * FROM Filter"
     cur = con.cursor()
     cur.execute(query)
     return [Filter(*filter) for filter in cur.fetchall()]
+
 
 def is_advert_in_db(advert: Advert, con: sqlite3.Connection) -> bool:
     query = "SELECT * FROM Advert WHERE user_id = ? AND url = ?"
@@ -129,6 +141,7 @@ def is_advert_in_db(advert: Advert, con: sqlite3.Connection) -> bool:
     if cur.fetchone():
         return True
     return False
+
 
 def is_user_registered(user_id, con: sqlite3.Connection) -> bool:
     query = "SELECT * FROM User WHERE id = ?"

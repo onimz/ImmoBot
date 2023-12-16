@@ -3,6 +3,7 @@ import logging
 from logging.handlers import TimedRotatingFileHandler
 import time
 
+
 def init_logger(path, level=logging.DEBUG):
     log_directory = path
     log_file_path = os.path.join(log_directory, "app.log")
@@ -14,9 +15,11 @@ def init_logger(path, level=logging.DEBUG):
     handler.setFormatter(formatter)
     logger.addHandler(handler)
 
+
 def exit_with_error(msg):
     logging.error(msg)
     exit(f"!!PROGRAM ENCOUNTERED AN ERROR: {msg}")
+
 
 def timed(func):
     def wrapper(*args, **kwargs):

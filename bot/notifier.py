@@ -17,7 +17,7 @@ class Notifier:
             exit_with_error(f"Couldn't parse .env value to int: {e}")
         except Exception as e:
             exit_with_error(f"Unexpected error while reading in env values: {e}")
-    
+
     def add_user(self, user_id, user_name) -> int:
         """
         0: limit reached,
@@ -26,7 +26,7 @@ class Notifier:
         """
         with get_connection() as con:
             return add_user(user_id, user_name, self.user_limit, con)
-    
+
     def add_filter(self, filter_url, user_id) -> int:
         """
         0: not registered,
@@ -57,4 +57,3 @@ class Notifier:
             new_adverts = get_adverts(con, latest_poll)
             update_latest_poll_timestamp(new_timestamp, con)
             return new_adverts
-            
