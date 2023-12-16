@@ -9,7 +9,7 @@ def init_logger(path, level=logging.DEBUG):
     os.makedirs(log_directory, exist_ok=True)
     logger = logging.getLogger()
     logger.setLevel(level)
-    handler = TimedRotatingFileHandler(log_file_path, when="midnight", interval=1, backupCount=365)
+    handler = TimedRotatingFileHandler(log_file_path, when="midnight", interval=1, backupCount=30)
     formatter = logging.Formatter("%(asctime)s (%(levelname)s): %(message)s")
     handler.setFormatter(formatter)
     logger.addHandler(handler)

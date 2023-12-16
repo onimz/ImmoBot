@@ -11,7 +11,6 @@ sys.path.append(project_root)
 
 from common.utils import timed
 from common.utils import init_logger
-from common.models.advert import Advert
 from common.db import get_connection, get_filters, add_adverts, init_db
 from crawlers.wg_gesucht_crawler import WgGesuchtCrawler
 from crawlers.immo_scout_24_crawler import ImmoScout24Crawler

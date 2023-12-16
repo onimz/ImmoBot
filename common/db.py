@@ -125,7 +125,7 @@ def get_filters(con: sqlite3.Connection) -> list[Filter]:
 def is_advert_in_db(advert: Advert, con: sqlite3.Connection) -> bool:
     query = "SELECT * FROM Advert WHERE user_id = ? AND url = ?"
     cur = con.cursor()
-    cur.execute(query, (advert.url, advert.user_id,))
+    cur.execute(query, (advert.user_id, advert.url,))
     if cur.fetchone():
         return True
     return False

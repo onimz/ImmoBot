@@ -50,11 +50,11 @@ class Notifier:
                 result += f"{str(advert.url)}\n"
             return result
 
-    def check_for_new_adverts(self):
+    def get_new_adverts(self):
         with get_connection() as con:
             new_timestamp = datetime.now()
             latest_poll = get_latest_poll_timestamp(con)
             new_adverts = get_adverts(con, latest_poll)
-            update_latest_poll_timestamp(con, new_timestamp)
+            update_latest_poll_timestamp(new_timestamp, con)
             return new_adverts
             
