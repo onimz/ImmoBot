@@ -2,3 +2,5 @@
   # running docker-compose
   - name: 'docker/compose:1.29.2'
     args: ['up', '-d']
+  - name: 'gcr.io/cloud-builders/gcloud'
+    args: ['app', 'deploy']
