@@ -22,7 +22,7 @@ env:
   #GKE_CLUSTER: cluster-1    # TODO: update to cluster name
   #GKE_ZONE: us-central1-c   # TODO: update to cluster zone
   DEPLOYMENT_NAME: gke-test # TODO: update to deployment name
-  REPOSITORY: samples # TODO: update to Artifact Registry docker repository
+  REPOSITORY: sample # TODO: update to Artifact Registry docker repository
   IMAGE: static-site
 
 jobs:
@@ -40,19 +40,19 @@ jobs:
       uses: actions/checkout@v3
 
     # Configure Workload Identity Federation and generate an access token.
-    - id: 'auth'
-      name: 'Authenticate to Google Cloud'
-      uses: 'google-github-actions/auth@v0'
-      with:
-        token_format: 'access_token'
-        workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
-        service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
+    #- id: 'auth'
+     # name: 'Authenticate to Google Cloud'
+      #uses: 'google-github-actions/auth@v0'
+      #with:
+       # token_format: 'access_token'
+        #workload_identity_provider: 'projects/123456789/locations/global/workloadIdentityPools/my-pool/providers/my-provider'
+        #service_account: 'my-service-account@my-project.iam.gserviceaccount.com'
 
     # Alternative option - authentication via credentials json
-    # - id: 'auth'
-    #   uses: 'google-github-actions/auth@v0'
-    #   with:
-    #     credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+    - id: 'auth'
+      uses: 'google-github-actions/auth@v0'
+      with:
+        credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
 
     - name: Docker configuration
       run: |-
@@ -68,14 +68,21 @@ jobs:
     - name: Build
       run: |-
         docker build \
-          --tag "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
+          --tag "bot-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
           --build-arg GITHUB_SHA="$GITHUB_SHA" \
           --build-arg GITHUB_REF="$GITHUB_REF" \
-          .
+          ./bot
+        docker build \
+          --tag "crawler-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA" \
+          --build-arg GITHUB_SHA="$GITHUB_SHA" \
+          --build-arg GITHUB_REF="$GITHUB_REF" \
+          ./crawler
     # Push the Docker image to Google Artifact Registry
     - name: Publish
       run: |-
-        docker push "$GAR_LOCATION-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
+        docker push "crawler-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
+        docker push "bot-docker.pkg.dev/$PROJECT_ID/$REPOSITORY/$IMAGE:$GITHUB_SHA"
+        
     # Set up kustomize
     #- name: Set up Kustomize
      # run: |-
