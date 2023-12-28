@@ -13,10 +13,14 @@ jobs:
       runs-on: ubuntu-latest
       steps:
         - uses: actions/checkout@v3
-        - name: Building and pushing the image
+        - name: Authenticate to Google Cloud
+          id: auth
+          uses: google-github-actions/auth@v2
+          with:
+            credentials_json: '${{ secrets.GCP_CREDENTIALS }}'
+        - name: Building and pushing the bot image
           uses: RafikFarhad/push-to-gcr-github-action@v5-rc1
           with:
-            gcloud_service_key: "${{ secrets.GCP_CREDENTIALS }}"
             registry: gcr.io
             project_id: immobot-409521
             image_name: bot
@@ -24,19 +28,13 @@ jobs:
             dockerfile: ./bot/Dockerfile
             context: .
             target: build
-  build-and-push-crawler:
-      name: Build & push crawler
-      runs-on: ubuntu-latest
-      steps:
-        - uses: actions/checkout@v3
-        - name: Building and pushing the image
-          uses: RafikFarhad/push-to-gcr-github-action@v5-rc1 # <- use this on your workflow
+        - name: Building and pushing the crawler image
+          uses: RafikFarhad/push-to-gcr-github-action@v5-rc1
           with:
-            gcloud_service_key: "${{ secrets.GCP_CREDENTIALS }}"
             registry: gcr.io
             project_id: immobot-409521
             image_name: crawler
             image_tag: 1.0-${{ github.sha }}, ${{ github.sha }}
-            dockerfile: ./test/Dockerfile.test
+            dockerfile: ./crawler/Dockerfile
             context: .
             target: build
