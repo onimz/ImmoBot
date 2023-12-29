@@ -127,11 +127,22 @@ def get_adverts(con: sqlite3.Connection, timestamp=None) -> list[Advert]:
     return [Advert(*advert) for advert in cur.fetchall()]
 
 
-def get_filters(con: sqlite3.Connection) -> list[Filter]:
-    query = "SELECT * FROM Filter"
+def get_filters(con: sqlite3.Connection, user_id=None) -> list[Filter]:
+    if user_id:
+        # FIXME SQL INJECTION
+        query = f"SELECT * FROM Filter WHERE user_id = {user_id}"
+    else:
+        query = "SELECT * FROM Filter"
+
     cur = con.cursor()
     cur.execute(query)
     return [Filter(*filter) for filter in cur.fetchall()]
+
+
+def delete_filter(con: sqlite3.Connection, filter_id):
+    query = "DELETE FROM Filter WHERE id = ?"
+    cur = con.cursor()
+    cur.execute(query, (filter_id,))
 
 
 def is_advert_in_db(advert: Advert, con: sqlite3.Connection) -> bool:

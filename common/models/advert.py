@@ -1,5 +1,16 @@
 class Advert:
-    def __init__(self, id, title, author, price, url, size_m2=None, website=None, created_at=None, advert_date=None, filter_id=None, user_id=None):
+    def __init__(self,
+                 id,
+                 title,
+                 author,
+                 price,
+                 url,
+                 size_m2=None,
+                 website=None,
+                 created_at=None,
+                 advert_date=None,
+                 filter_id=None,
+                 user_id=None):
         self.id = id
         self.title = title
         self.author = author

@@ -3,14 +3,25 @@ from datetime import datetime
 
 import tldextract
 
-from common.db import init_db, get_connection, get_adverts, add_user, add_filter, is_user_registered, get_latest_poll_timestamp, update_latest_poll_timestamp
+from common.db import (
+    init_db, get_connection,
+    get_adverts,
+    add_user,
+    get_filters,
+    add_filter,
+    delete_filter,
+    is_user_registered,
+    get_latest_poll_timestamp,
+    update_latest_poll_timestamp)
+from common.models.filter import Filter
+from common.models.advert import Advert
 from common.utils import exit_with_error
 
 
 class Notifier:
     def __init__(self):
         init_db()
-        self.portale = ["wg-gesucht.de", "immobilienscout24.de"]
+        self.portale = ["wg-gesucht.de", "immowelt.de"] # FIXME
         try:
             self.user_limit = int(os.getenv('USER_LIMIT'))
         except ValueError as e:
@@ -42,15 +53,23 @@ class Notifier:
             add_filter(domain, filter_url, user_id, con)
             return 1
 
-    def get_advert_list(self):
+    def get_user_filters(self, user_id) -> list[Filter]:
+        with get_connection() as con:
+            return get_filters(con, user_id=user_id)
+
+    def delete_filter(self, filter_id) -> int:
+        with get_connection() as con:
+            delete_filter(con, filter_id)
+
+    """def get_advert_list(self) -> list[Advert]:
         with get_connection() as con:
             adverts = get_adverts(con)
             result = ""
             for advert in adverts:
                 result += f"{str(advert.url)}\n"
-            return result
+            return result"""
 
-    def get_new_adverts(self):
+    def get_new_adverts(self) -> list[Advert]:
         with get_connection() as con:
             new_timestamp = datetime.now()
             latest_poll = get_latest_poll_timestamp(con)

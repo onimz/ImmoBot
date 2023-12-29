@@ -2,51 +2,76 @@ import logging
 from time import sleep
 import os
 import sys
-from collections import defaultdict
+from queue import Queue, Empty
+import threading
 
 from dotenv import load_dotenv
-
-from common.utils import timed
-from common.utils import init_logger
-from common.db import get_connection, get_filters, add_adverts, init_db
-from crawlers.wg_gesucht_crawler import WgGesuchtCrawler
-from crawlers.immo_scout_24_crawler import ImmoScout24Crawler
-
 load_dotenv()
 project_root = os.path.dirname(os.path.abspath(__file__))+"/../"
 sys.path.append(project_root)
+
+from common.utils import timed
+from common.utils import init_logger
+from common.db import (
+    get_connection, 
+    get_filters, 
+    add_adverts, 
+    init_db
+)
+from common.models.filter import Filter
+from crawlers.wg_gesucht_crawler import WgGesuchtCrawler
+from crawlers.immowelt_crawler import ImmoweltCrawler
+
+
+def process_filter(thread_num: int, filter: Filter) -> None:
+    portale = {"wg-gesucht.de": WgGesuchtCrawler(),
+               "immowelt.de": ImmoweltCrawler()}
+
+    user_adverts = portale.get(filter.domain).crawl(filter)
+    with get_connection() as con:
+        add_adverts(user_adverts, con)
+    print(f"Thread {thread_num}: Processing filter with id {filter.id}")
 
 
 @timed
 def crawl_websites_routine() -> None:
     logging.info("Start crawling")
-    portale = {"wg-gesucht.de": WgGesuchtCrawler(),
-               "immobilienscout24.de": ImmoScout24Crawler()}
 
-    # Get all filters in db
+    # Get all filters from db
     with get_connection() as con:
         filters = get_filters(con)
 
-    # Group filters to users
-    user_filters = defaultdict(list)
-    for f in filters:
-        user_filters[f.user_id].append(f)
+    filter_queue = Queue()
 
-    # Scrape user filters
-    for user_id, filters in user_filters.items():
-        user_adverts = []
-        for f in filters:
-            user_adverts += portale.get(f.domain).crawl(f.filter_url, f.id, user_id)
-        with get_connection() as con:
-            new_user_adverts = add_adverts(user_adverts, con)
-            if len(new_user_adverts) > 0:
-                logging.info(f"Found {len(new_user_adverts)} new adverts for user {user_id}")
+    for filter in filters:
+        filter_queue.put(filter)
+
+    threads = []
+
+    def thread_worker(thread_num):
+        while True:
+            try:
+                filter = filter_queue.get(timeout=0.01)
+            except Empty:
+                # Queue is empty, thread can exit
+                break
+            else:
+                process_filter(thread_num, filter)
+
+    for i in range(THREADS):
+        thread = threading.Thread(target=thread_worker, args=(i+1,))
+        threads.append(thread)
+        thread.start()
+
+    for thread in threads:
+        thread.join()
 
 
 if __name__ == '__main__':
     init_logger(path=f"{os.path.dirname(os.path.abspath(__file__))}/logs", level=logging.INFO)
     init_db()
-    update_rate = int(os.getenv('UPDATE_RATE'))
+    UPDATE_RATE = int(os.getenv('UPDATE_RATE'))
+    THREADS = int(os.getenv('THREADS'))
     while True:
         crawl_websites_routine()
-        sleep(update_rate)
+        sleep(UPDATE_RATE)

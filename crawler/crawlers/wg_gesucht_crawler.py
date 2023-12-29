@@ -4,11 +4,14 @@ from datetime import datetime
 
 from crawlers.crawler import Crawler
 from common.models.advert import Advert
+from common.models.filter import Filter
+
+# https://www.wg-gesucht.de/1-zimmer-wohnungen-und-wohnungen-in-Hannover.57.1+2.1.0.html?offer_filter=1&city_id=57&sort_column=0&sort_order=0&noDeact=1&categories%5B%5D=1&categories%5B%5D=2&sMin=46&rMax=750
 
 class WgGesuchtCrawler(Crawler):
 
-    def crawl(self, filter_url, filter_id, user_id) -> list[Advert]:
-        page = requests.get(filter_url)
+    def crawl(self, filter: Filter) -> list[Advert]:
+        page = requests.get(filter.filter_url, timeout=2)
         soup = BeautifulSoup(page.content, "html.parser")
         results = soup.find_all("div", class_="col-sm-8 card_body")
         # Find all offers on page one
@@ -22,6 +25,16 @@ class WgGesuchtCrawler(Crawler):
                 title = result.find("a").text.strip()
                 price = result.find("div", class_="col-xs-3").find("b").text.strip()
                 url = "https://www.wg-gesucht.de" + result.find('a')['href']
-                adverts.append(Advert(1, title, author, price, url, filter_id=filter_id, created_at=datetime.now(), user_id=user_id))
+                adverts.append(
+                    Advert(
+                        None,
+                        title,
+                        author,
+                        price,
+                        url,
+                        filter_id=filter.id,
+                        created_at=datetime.now(),
+                        user_id=filter.user_id
+                    )
+                )
         return adverts
-   
