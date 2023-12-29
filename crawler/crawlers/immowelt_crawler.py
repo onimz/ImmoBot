@@ -39,4 +39,4 @@ class ImmoweltCrawler(Crawler):
                     user_id=filter.user_id
                 )
             )
-            return adverts
+        return adverts
