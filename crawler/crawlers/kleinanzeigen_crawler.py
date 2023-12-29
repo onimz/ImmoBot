@@ -5,25 +5,24 @@ from crawler.crawlers.crawler import Crawler
 from common.models.advert import Advert
 from common.models.filter import Filter
 
+# https://www.kleinanzeigen.de/s-wohnung-mieten/hannover/preis::800/c203l3155+wohnung_mieten.qm_d:35%2C
 
-# https://www.wohnungsboerse.net/searches/index?estate_marketing_types=miete%2C1&marketing_type=miete&estate_types%5B0%5D=1&is_rendite=0&estate_id=&zipcodes%5B%5D=&cities%5B%5D=Hannover&districts%5B%5D=&term=Hannover&umkreiskm=&pricetext=bis+800+%E2%82%AC&minprice=&maxprice=800&sizetext=ab+35+m%C2%B2&minsize=35&maxsize=&roomstext=&minrooms=&maxrooms=
 
-
-class WohnungsboerseCrawler(Crawler):
+class KleinanzeigenCrawler(Crawler):
 
     def crawl(self, filter: Filter) -> list[Advert]:
         page = self.request(url=filter.filter_url)
         soup = BeautifulSoup(page.content, "html.parser")
-        estate_items = soup.select('a[class^="estate"]')
+        estate_items = soup.select('li[class^="j-adlistitem"]')
 
         # Find all offers on page one
         adverts = []
         for ad in estate_items:
-            title = ad.find('h3').text.strip()
-            url = ad.get('href')
+            title = ad.find('strong', {'adlist--item--title'}).text.strip()
+            url = "https://www.kleinanzeigen.de" + ad.find('a')['href']
             author = "N/A"
-            price, m2, rooms = list(value.text.strip() for value in ad.find_all('dd'))[:3]
-
+            price = ad.find('div', {'adlist--item--price'}).text.strip()
+            m2, rooms = list(value.text.strip() for value in ad.find_all('span', {'simpletag'}))[:2]
             adverts.append(
                 Advert(
                     None,

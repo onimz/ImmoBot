@@ -1,4 +1,3 @@
-import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -12,7 +11,7 @@ from common.models.filter import Filter
 class ImmobilienCrawler(Crawler):
 
     def crawl(self, filter: Filter) -> list[Advert]:
-        page = requests.get(filter.filter_url)
+        page = self.request(url=filter.filter_url)
         soup = BeautifulSoup(page.content, "html.parser")
         estate_items = soup.select('a[class^="_ref"]')
 

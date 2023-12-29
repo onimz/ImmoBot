@@ -1,4 +1,3 @@
-import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
@@ -12,7 +11,7 @@ from common.models.filter import Filter
 class WgGesuchtCrawler(Crawler):
 
     def crawl(self, filter: Filter) -> list[Advert]:
-        page = requests.get(filter.filter_url, timeout=2)
+        page = self.request(url=filter.filter_url)
         soup = BeautifulSoup(page.content, "html.parser")
         results = soup.find_all("div", class_="col-sm-8 card_body")
         # Find all offers on page one
