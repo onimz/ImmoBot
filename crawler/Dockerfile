@@ -19,10 +19,10 @@ WORKDIR /app
 
 
 # Copy the source code into the container.
-COPY ./crawler .
+COPY ./crawler ./crawler/.
 COPY common common
 
-RUN python -m pip install -r requirements.txt
+RUN python -m pip install -r ./crawler/requirements.txt
 
 # Run the application.
-CMD python main.py
+CMD python ./crawler/main.py

@@ -56,12 +56,16 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = strings.REGISTER_FAILURE
     elif status == 1:
         text = strings.REGISTER_SUCCESS.format(
-            user.full_name, ', '.join(notifier.portale))
+            user.full_name, ', '.join(notifier.portals))
     elif status == 2:
         text = strings.REGISTER_EXISTS
 
     await update.message.reply_text(text)
 
+
+async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text(strings.HELP_TEXT.format(', '.join(notifier.portals)))
+    
 
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -168,9 +172,10 @@ async def polling_db(context: ContextTypes.DEFAULT_TYPE):
 async def init_bot(context: ContextTypes.DEFAULT_TYPE):
     await context.bot.set_my_description("")
     await context.bot.set_my_short_description(strings.BOT_SHORT_DESCRIPTION)
-    await context.bot.set_my_commands([("add_filter", "Hinzufügen von Suchfiltern"),
+    await context.bot.set_my_commands([("add", "Hinzufügen von Suchfiltern"),
                                        ("show", "Anzeigen und Bearbeiten von Suchfiltern und Annoncen"),
-                                       ("register", "Zum Registrieren")])
+                                       ("register", "Zum Registrieren"),
+                                       ("help", "Hilfe")])
 
 
 if __name__ == '__main__':
@@ -217,6 +222,7 @@ if __name__ == '__main__':
     application.add_handler(conv_handler)
     application.add_handler(CommandHandler('start', start))
     application.add_handler(CommandHandler('register', register))
+    application.add_handler(CommandHandler('help', help))
     application.add_handler(CommandHandler('add', add_filter))
     application.add_handler(CommandHandler('show', show_filters))
     application.add_handler(CallbackQueryHandler(button_callback))

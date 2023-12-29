@@ -16,12 +16,13 @@ from common.db import (
 from common.models.filter import Filter
 from common.models.advert import Advert
 from common.utils import exit_with_error
+from common.portals import get_portal_domains
 
 
 class Notifier:
     def __init__(self):
         init_db()
-        self.portale = ["wg-gesucht.de", "immowelt.de"] # FIXME
+        self.portals = get_portal_domains()
         try:
             self.user_limit = int(os.getenv('USER_LIMIT'))
         except ValueError as e:
@@ -48,7 +49,7 @@ class Notifier:
             if not is_user_registered(user_id, con):
                 return 0
             domain = tldextract.extract(filter_url).registered_domain
-            if domain not in self.portale:
+            if domain not in self.portals:
                 return 2
             add_filter(domain, filter_url, user_id, con)
             return 1

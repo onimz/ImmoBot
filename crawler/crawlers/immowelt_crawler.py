@@ -2,7 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from crawlers.crawler import Crawler
+from crawler.crawlers.crawler import Crawler
 from common.models.advert import Advert
 from common.models.filter import Filter
 

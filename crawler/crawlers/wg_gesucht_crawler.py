@@ -2,11 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from crawlers.crawler import Crawler
+from crawler.crawlers.crawler import Crawler
 from common.models.advert import Advert
 from common.models.filter import Filter
 
 # https://www.wg-gesucht.de/1-zimmer-wohnungen-und-wohnungen-in-Hannover.57.1+2.1.0.html?offer_filter=1&city_id=57&sort_column=0&sort_order=0&noDeact=1&categories%5B%5D=1&categories%5B%5D=2&sMin=46&rMax=750
+
 
 class WgGesuchtCrawler(Crawler):
 

@@ -16,13 +16,10 @@ WORKDIR /app
 # Leverage a cache mount to /root/.cache/pip to speed up subsequent builds.
 # Leverage a bind mount to requirements.txt to avoid having to copy them into
 # into this layer.
-COPY ./bot .
+COPY ./bot ./bot
 COPY common common
 
-RUN python -m pip install -r requirements.txt
-
-# Copy the source code into the container.
-
+RUN python -m pip install -r ./bot/requirements.txt
 
 # Run the application.
-CMD python main.py
+CMD python ./bot/main.py

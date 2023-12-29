@@ -19,15 +19,11 @@ from common.db import (
     init_db
 )
 from common.models.filter import Filter
-from crawlers.wg_gesucht_crawler import WgGesuchtCrawler
-from crawlers.immowelt_crawler import ImmoweltCrawler
+from common.portals import get_portal_dict
 
 
 def process_filter(thread_num: int, filter: Filter) -> None:
-    portale = {"wg-gesucht.de": WgGesuchtCrawler(),
-               "immowelt.de": ImmoweltCrawler()}
-
-    user_adverts = portale.get(filter.domain).crawl(filter)
+    user_adverts = get_portal_dict().get(filter.domain).crawl(filter)
     with get_connection() as con:
         add_adverts(user_adverts, con)
     print(f"Thread {thread_num}: Processing filter with id {filter.id}")
