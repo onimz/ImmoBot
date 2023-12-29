@@ -1,0 +1,5 @@
+  steps:
+  # running docker-compose
+  - name: 'docker/compose:1.29.2'
+    args: ['up', '-d']
+  images: ['europe-west3-docker.pkg.dev/immobot-409521/immobot']
