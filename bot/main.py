@@ -135,7 +135,7 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _send_out_adverts(adverts, context):
     for advert in adverts:
-        text = strings.ADVERT_MESSAGE.format(advert.title.replace("|", ""), advert.url, advert.price, advert.size_m2)
+        text = strings.ADVERT_MESSAGE.format(advert.title.replace("[", "").replace("]", ""), advert.url, advert.price, advert.size_m2)
         await context.bot.send_message(chat_id=advert.user_id, text=text)
 
 
