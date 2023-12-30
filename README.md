@@ -1,9 +1,12 @@
 # ImmoBot
-ImmoBot is a Telegram bot which lets users keep track of newly posted apartment ads of some of the biggest housing portals in Germany.
+ImmoBot is a Telegram bot which lets users keep track of newly posted apartment ads of housing portals in Germany.
 
-## Supported housing portals as of now
-- Immowelt
-- WG-Gesucht
+## Supported portals
+- [immowelt.de](https://www.immowelt.de)
+- [kleinanzeigen.de](https://www.kleinanzeigen.de)
+- [wg-gesucht.de](https://www.wg-gesucht.de)
+- [wohnungsboerse.net](https://www.wohnungsboerse.net)
+- [immobilien.de](https://www.immobilien.de)
 
 ## Setup
 1. Create a Telegram bot in 5 minutes with https://telegram.me/BotFather

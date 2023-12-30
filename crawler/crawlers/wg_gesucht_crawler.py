@@ -16,7 +16,7 @@ class WgGesuchtCrawler(Crawler):
         results = soup.find_all("div", class_="col-sm-8 card_body")
         # Find all offers on page one
         adverts = []
-        for result in results:
+        for result in results[:self.MAX_AD_SIZE]:
             author = result.find("span", class_="ml5")
             is_ad = author is None or result.find("span", class_="label_verified ml5")
 
@@ -25,6 +25,7 @@ class WgGesuchtCrawler(Crawler):
                 title = result.find("a").text.strip()
                 price = result.find("div", class_="col-xs-3").find("b").text.strip()
                 url = "https://www.wg-gesucht.de" + result.find('a')['href']
+                m2 = result.find("div", class_='col-xs-3 text-right').text.strip()
                 adverts.append(
                     Advert(
                         None,
@@ -32,6 +33,7 @@ class WgGesuchtCrawler(Crawler):
                         author,
                         price,
                         url,
+                        size_m2=m2,
                         filter_id=filter.id,
                         created_at=datetime.now(),
                         user_id=filter.user_id

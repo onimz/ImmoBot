@@ -1,4 +1,3 @@
-
 import os
 import logging
 import sys
@@ -65,7 +64,7 @@ async def register(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def help(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(strings.HELP_TEXT.format(', '.join(notifier.portals)))
-    
+
 
 async def add_filter(update: Update, context: ContextTypes.DEFAULT_TYPE):
     try:
@@ -136,7 +135,7 @@ async def unknown(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def _send_out_adverts(adverts, context):
     for advert in adverts:
-        text = f"[{advert.title} | {advert.price}]({advert.url})"
+        text = strings.ADVERT_MESSAGE.format(advert.title.replace("|", ""), advert.url, advert.price, advert.size_m2)
         await context.bot.send_message(chat_id=advert.user_id, text=text)
 
 
@@ -226,7 +225,7 @@ if __name__ == '__main__':
     application.add_handler(CommandHandler('add', add_filter))
     application.add_handler(CommandHandler('show', show_filters))
     application.add_handler(CallbackQueryHandler(button_callback))
-    application.add_handler(MessageHandler(filters.COMMAND, unknown)) # must be added last
+    application.add_handler(MessageHandler(filters.COMMAND, unknown))  # must be added last
     job_queue = application.job_queue
     job_init_bot_settings = job_queue.run_once(init_bot, when=1)
     job_scrape = job_queue.run_repeating(polling_db, interval=int(os.getenv('BOT_POLLING_RATE')), first=10)

@@ -17,7 +17,7 @@ class KleinanzeigenCrawler(Crawler):
 
         # Find all offers on page one
         adverts = []
-        for ad in estate_items:
+        for ad in estate_items[:self.MAX_AD_SIZE]:
             title = ad.find('strong', {'adlist--item--title'}).text.strip()
             url = "https://www.kleinanzeigen.de" + ad.find('a')['href']
             author = "N/A"

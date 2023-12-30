@@ -4,6 +4,7 @@ import requests
 
 
 class Crawler:
+    MAX_AD_SIZE = 20
 
     def __init__(self) -> None:
         self.headers = {

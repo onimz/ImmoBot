@@ -111,7 +111,7 @@ def add_adverts(adverts: list[Advert], con: sqlite3.Connection) -> list[Advert]:
         if is_advert_in_db(advert, con):
             continue
         query = f"INSERT INTO Advert (title, author, price, url, size_m2, website, created_at, annonce_date, filter_id, user_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        cur.execute(query, (advert.title, advert.author, advert.price, advert.url, "N/A",
+        cur.execute(query, (advert.title, advert.author, advert.price, advert.url, advert.size_m2,
                     "N/A", advert.created_at, "N/A", advert.filter_id, advert.user_id,))
         added_adverts.append(advert)
     return added_adverts

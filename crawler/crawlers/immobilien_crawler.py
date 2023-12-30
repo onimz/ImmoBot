@@ -17,7 +17,7 @@ class ImmobilienCrawler(Crawler):
 
         # Find all offers on page one
         adverts = []
-        for ad in estate_items:
+        for ad in estate_items[:self.MAX_AD_SIZE]:
             title = ad.find('h3').text.strip()
             url = "https://www.immobilien.de" + ad.get('href')
             author = "N/A"

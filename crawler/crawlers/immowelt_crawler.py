@@ -16,7 +16,7 @@ class ImmoweltCrawler(Crawler):
         adverts = []
         estate_items = soup.select('div[class^="EstateItem"]')
 
-        for ad in estate_items:
+        for ad in estate_items[:self.MAX_AD_SIZE]:
             title = ad.find('h2').text.strip()
             url = ad.find('a')['href'].strip()
             author = ad.select_one('div[class^=ProviderName]').span.text.strip()
